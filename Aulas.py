@@ -1,5 +1,5 @@
 import random
-
+import sys
 # Dicionário de aulas com seus respectivos caracteres
 aula_dict = {
     'M': 'Matemática',
@@ -89,6 +89,7 @@ def verificar_sobreposicao(horario):
 def fitting(horario):
     # Quantidade desejada de cada aula
     requisitos = {
+        'M': 18,
         'L': 21,
         'E': 3,
         'H': 6,
@@ -98,9 +99,8 @@ def fitting(horario):
         'U': 3,
         'I': 15,
         'F': 3,
-        'A': 6
+        'A': 6    
     }
-    
     # Contar a quantidade de cada letra no horário
     contador = {letra: horario.count(letra) for letra in aula_dict.keys()}
     
@@ -138,24 +138,69 @@ for horario in horarios:
 # Ordenar a lista com base na pontuação (melhores pontuações primeiro)
 lista_fitting.sort(key=lambda x: x[0])
 
-def crossover(horario1, horario2):
-    # Escolher um ponto de corte aleatório
-    ponto_corte = random.randint(1, len(horario1) - 1)
-    # Fazer o crossover de 1 ponto
-    filho1 = horario1[:ponto_corte] + horario2[ponto_corte:]
-    filho2 = horario2[:ponto_corte] + horario1[ponto_corte:]
+def crossover(horario1, horario2, num_pontos=3):
+    # Escolher múltiplos pontos de corte aleatórios
+    pontos_corte = sorted(random.sample(range(1, len(horario1)), num_pontos))
+    
+    # Fazer o crossover de múltiplos pontos
+    filho1, filho2 = '', ''
+    ultimo_ponto = 0
+    for i, ponto in enumerate(pontos_corte):
+        if i % 2 == 0:
+            filho1 += horario1[ultimo_ponto:ponto]
+            filho2 += horario2[ultimo_ponto:ponto]
+        else:
+            filho1 += horario2[ultimo_ponto:ponto]
+            filho2 += horario1[ultimo_ponto:ponto]
+        ultimo_ponto = ponto
+    
+    # Adicionar a última parte
+    if len(pontos_corte) % 2 == 0:
+        filho1 += horario1[ultimo_ponto:]
+        filho2 += horario2[ultimo_ponto:]
+    else:
+        filho1 += horario2[ultimo_ponto:]
+        filho2 += horario1[ultimo_ponto:]
+    
     return filho1, filho2
 
-def mutacao(horario, taxa_mutacao=0.01):
+def mutacao(horario, taxa_mutacao=0.05):
     # Converter o horário em uma lista de caracteres para facilitar a mutação
     horario_list = list(horario)
+    
+    # 1. Mutação Tradicional
     for i in range(len(horario_list)):
         if random.random() < taxa_mutacao:
             # Escolher uma nova aula aleatória diferente da atual
             novas_opcoes = [aula for aula in aula_dict.keys() if aula != horario_list[i]]
             horario_list[i] = random.choice(novas_opcoes)
+    
+    # 2. Mutação de Troca Aleatória
+    if random.random() < taxa_mutacao:
+        for _ in range(random.randint(1, 10)):
+            posicao_1 = random.randint(0, len(horario_list) - 1)
+            posicao_2 = random.randint(0, len(horario_list) - 1)
+            horario_list[posicao_1], horario_list[posicao_2] = horario_list[posicao_2], horario_list[posicao_1]
+    
+    # # 3. Mutação Direcionada por Frequência
+    # frequencias = {aula: horario_list.count(aula) for aula in aula_dict.keys()}
+    # aulas_mais_frequentes = [aula for aula, freq in frequencias.items() if freq > len(horario_list) // len(aula_dict)]
+    # for i in range(len(horario_list)):
+    #     if horario_list[i] in aulas_mais_frequentes and random.random() < taxa_mutacao:
+    #         novas_opcoes = [aula for aula in aula_dict.keys() if aula != horario_list[i]]
+    #         horario_list[i] = random.choice(novas_opcoes)
+    
+    # # 4. Mutação de Blocos
+    # if random.random() < taxa_mutacao:
+    #     bloco_tamanho = random.randint(2, 5)  # Escolher um tamanho de bloco aleatório
+    #     inicio_bloco = random.randint(0, len(horario_list) - bloco_tamanho)
+    #     novas_opcoes = [aula for aula in aula_dict.keys()]
+    #     for j in range(bloco_tamanho):
+    #         horario_list[inicio_bloco + j] = random.choice(novas_opcoes)
+    
     # Converter a lista de volta para string
     return ''.join(horario_list)
+
 
 for i in range(100000):  # Loop com 100000 iterações (pode ajustar conforme desejar)
     # Calcular a pontuação de cada horário e armazenar em uma lista
@@ -170,12 +215,15 @@ for i in range(100000):  # Loop com 100000 iterações (pode ajustar conforme de
     pontuacao_menor_atual = lista_fitting[0][0]
     
     if lista_fitting[0][0] == 0:
-        print(f'Geracao {i}, {lista_fitting[0]}')
+        print(f'''Geracao {i}, {lista_fitting[0]}\n
+                        {lista_fitting[1]}\n
+                        {lista_fitting[2]}''')
         break
     elif pontuacao_menor_atual <pontuacao_menor:
         pontuacao_menor = pontuacao_menor_atual
-        print(f'Geracao {i}, {lista_fitting[0]}')
+        sys.stdout.write(f'''Geracao {i}, {lista_fitting[0]}\n{lista_fitting[1]}\n{lista_fitting[2]}\n''')
     # Pegar os 50 primeiros horários com as melhores pontuações
+    # melhores_horarios = lista_fitting
     melhores_horarios = lista_fitting[:50]
     filhos = []
     
@@ -188,8 +236,9 @@ for i in range(100000):  # Loop com 100000 iterações (pode ajustar conforme de
     filhos_mutados = [mutacao(filho) for filho in filhos]
 
     # Gerar outros 50 horários novos
-    novos_horarios = gerar_horarios(50)
+    # novos_horarios = gerar_horarios(50)
     # horarios = novos_horarios + filhos_mutados
-    melhores_horarios = lista_fitting[:25]
-    # horarios = [horario for _, horario in melhores_horarios] + filhos_mutados
-    horarios =  filhos_mutados + novos_horarios
+    # melhores_horarios = lista_fitting[:25]
+    horarios = [horario for _, horario in melhores_horarios] + filhos_mutados
+    # horarios =  filhos_mutados + novos_horarios
+    # horarios =  filhos_mutados
