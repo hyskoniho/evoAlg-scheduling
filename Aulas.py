@@ -21,6 +21,7 @@ def gerar_horarios(num_horarios=100):
     return horarios
 
 
+
 def validar_horario(horario, restricoes):
     ponto = 0
     for dia, regras in restricoes.items():
