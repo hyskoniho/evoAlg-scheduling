@@ -1,7 +1,7 @@
-
 import random
 import sys
 import csv
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import freeze_support
 
@@ -43,6 +43,16 @@ restricoes = {
         'H': ['manhã'],
         'F': [2,3,4,5]  # Educação Física deve estar na terceira até sexta aula (índice 1)
     }
+}
+
+requisitos = {
+    'M': 28, 
+    'L': 28, 
+    'H': 16, 
+    'C': 8, 
+    'R': 4, 
+    'I': 20, 
+    'F': 4
 }
 
 # Gerar horários aleatórios
@@ -90,8 +100,7 @@ def verificar_sobreposicao(horario):
 
 # Função de Fitness
 def fitting(horario):
-    requisitos = {'M': 28, 'L': 28, 'H': 16, 'C': 8, 'R': 4, 'I': 20, 'F': 4}
-    contador = {letra: horario.count(letra) for letra in aula_dict.keys()}
+    contador = Counter(horario)
     pontuacao = sum(abs(requisitos[aula] - contador.get(aula, 0)) for aula in requisitos)
     pontuacao += validar_horario(horario, restricoes)
     pontuacao += verificar_sobreposicao(horario)   
@@ -186,8 +195,8 @@ def algGen(pop_size, eugeny, max_gen=100000):
         
         else:   
             nova_populacao = populacao[:eugeny]
-            for _ in range(pop_size - eugeny):
-                pai1, pai2 = random.sample(populacao[:50], 2)
+            while len(nova_populacao) < pop_size:
+                pai1, pai2 = random.sample(populacao[:pop_size//2], 2)
                 filho1, filho2 = crossover(pai1, pai2)
                 nova_populacao.extend([mutacao_inteligente(filho1), mutacao_inteligente(filho2)])
         
