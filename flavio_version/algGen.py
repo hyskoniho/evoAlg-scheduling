@@ -73,7 +73,7 @@ def validar_horario(horario, restricoes):
                     elif isinstance(condicao, list):  # Lista de horários permitidos
                         if not any(aulas_do_dia[i] == aula for i in condicao):
                             pontos += 1  # Penaliza se a aula não estiver em nenhum dos horários permitidos
-                    elif condicao == 'manhã' and aula in aulas_do_dia[3:]:  # Deve estar até a 3ª aula
+                    elif condicao == 'manhã' and aula in aulas_do_dia[4:]:  # Deve estar até a 3ª aula
                         pontos += 1
                     elif condicao == 'somente' and aula not in aulas_do_dia:  # Deve estar presente no dia
                         pontos += 1
