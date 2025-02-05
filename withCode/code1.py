@@ -1,5 +1,7 @@
 import random, os, sys
 from ptymer import Timer
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from multiprocessing import freeze_support
 
 # Medidas drásticas tomadas aqui. Não faça isso em casa!
 try:
@@ -9,17 +11,19 @@ try:
 except ModuleNotFoundError:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../fitting')))
     from fitting_function import *
+    
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../aux_tools')))
     from hr_format import *
+    from trace_function import *
 
 # Parâmetros do algoritmo
-POPULATION_SIZE = 200  # Tamanho da população
-NUM_GENERATIONS = 100000  # Número de gerações
+POPULATION_SIZE = 250  # Tamanho da população
+NUM_GENERATIONS = 10000000  # Número de gerações
 MATE_RATE = 0.7  # Taxa de cruzamento
 BASE_MUTATION_RATE = 0.01  # Taxa de mutação inicial
 MUTATION_RATE = BASE_MUTATION_RATE  # Taxa de mutação variável
 MUTATION_ADJUSTMENT = 0.0025  # Ajuste dinâmico da taxa de mutação
-EUGENY = int(POPULATION_SIZE*0.05)  # Número de indivíduos que passam para a próxima geração
+# EUGENY = int(POPULATION_SIZE*0.05)  # Número de indivíduos que passam para a próxima geração
 BEST_DUDE = ''  # Melhor indivíduo
 
 # Função para gerar um indivíduo
@@ -44,10 +48,10 @@ def generate_population(size=POPULATION_SIZE):
     return [generate_individual() for _ in range(size)]
 
 # Função para gerar uma população especial (com os requisitos mínimos já definidos)
-def special_generate_population(size=POPULATION_SIZE): 
+def special_generate_population(size=POPULATION_SIZE, turmas: int = 4): 
     lis = []
     for _ in range(size):
-        iv = list(''.join(f'{key}' * value for key, value in REQUISITOS.items()))
+        iv = list(''.join(f'{key}' * (value * turmas) for key, value in REQUISITOS.items()))
         random.shuffle(iv)
         lis.append(''.join(iv))
     return lis
@@ -60,11 +64,39 @@ def evaluate_individual(individual):
 def evaluate_population(population):
     return [evaluate_individual(individual) for individual in population]
 
+# Função para avaliar a população inteira de maneira assíncrona
+def async_evaluate_population(population):
+    with ThreadPoolExecutor(max_workers=32) as executor:
+        futures = {executor.submit(evaluate_individual, individual): idx for idx, individual in enumerate(population)}
+        resultados = [None] * len(population)
+        for future in as_completed(futures):
+            idx = futures[future]
+            resultados[idx] = future.result()
+    return resultados
+
 # Função de seleção por torneio
 def tournament_selection(population, scores, tournament_size=5):
     selected = random.sample(range(len(population)), tournament_size)
     best = min(selected, key=lambda idx: scores[idx])
     return population[best]
+
+def roulette_selection(population, scores):
+    total_score = sum(scores)
+    probabilities = [(total_score - score) / total_score for score in scores]
+    
+    cumulative_probabilities = []
+    cumulative_sum = 0
+    for prob in probabilities:
+        cumulative_sum += prob
+        cumulative_probabilities.append(cumulative_sum)
+
+    # Selecionar um número aleatório entre 0 e 1
+    random_value = random.random()
+    
+    # Encontrar o indivíduo correspondente ao valor aleatório
+    for i, cumulative_probability in enumerate(cumulative_probabilities):
+        if random_value <= cumulative_probability:
+            return population[i]
 
 # Função de cruzamento (crossover)
 def crossover(parent1, parent2, mate_rate=MATE_RATE):
@@ -95,35 +127,55 @@ def mutate(individual, mutation_rate=MUTATION_RATE):
     )
     return mutated
 
+def special_mutate(individual, mutation_rate=MUTATION_RATE):
+    individual = list(individual)  # Converte o indivíduo para uma lista para facilitar a troca
+    
+    # Aplica a mutação
+    for i in range(len(individual)):
+        if random.random() < mutation_rate:
+            j = random.randint(0, len(individual) - 1)
+            individual[i], individual[j] = individual[j], individual[i]
+    
+    return ''.join(individual)
+
 # Loop de execução principal
 def genetic_algorithm():
-    population = generate_population()
+    population = special_generate_population()
     stuck_count = 0
     evolve_count = 1
     best_score = float('inf')
     best_individual = None
+    cataclisms = 0
     
     for generation in range(NUM_GENERATIONS):
-        scores = evaluate_population(population)
-        
         # Ajuste dinâmico da taxa de mutação
         global MUTATION_RATE
         if stuck_count != 0 and stuck_count % evolve_count == 0:
-            MUTATION_RATE += MUTATION_ADJUSTMENT
-            print(f"[G-{generation}] Taxa de mutação ajustada para {MUTATION_RATE}!")
+            if MUTATION_RATE >= 1:
+                print(f"[G-{generation}] Taxa de mutação atingiu o limite máximo! Realizando a recriação da população...")
+                population = special_generate_population(POPULATION_SIZE-1)
+                
+                population.append(best_individual)
+                MUTATION_RATE = BASE_MUTATION_RATE
+                stuck_count = 0
+                evolve_count = (evolve_count//2) if evolve_count > 1 else 1
+                
+                if cataclisms <= 2:
+                    cataclisms += 1
+                else:
+                    print(f"[G-{generation}] Cataclismas consecutivos! Realizando a recriação da população com aumento significativo...")
+                    track_execution(fitting, best_individual)
+                    population.extend(special_generate_population((len(population)*2)-POPULATION_SIZE))
+                    cataclisms = 0
+                
+            else:
+                MUTATION_RATE = round(MUTATION_RATE + MUTATION_ADJUSTMENT, 4)
+                print(f"[G-{generation}] Taxa de mutação ajustada para {MUTATION_RATE}!")
+                
         # else:
         #     MUTATION_RATE = max(0.01, MUTATION_RATE - MUTATION_ADJUSTMENT)
 
-        new_population = []
-        for _ in range(POPULATION_SIZE - EUGENY):
-            parent1 = tournament_selection(population, scores)
-            parent2 = tournament_selection(population, scores)
-            child = crossover(parent1, parent2)
-            child = mutate(child, MUTATION_RATE)
-            new_population.append(child)
-        
-        new_population.extend(sorted(population, key=lambda x: evaluate_individual(x))[:EUGENY])
-        population = new_population
+        scores = async_evaluate_population(population)
         
         # Exibir o melhor indivíduo da geração
         if min(scores) < best_score:
@@ -133,19 +185,41 @@ def genetic_algorithm():
             print(f"[G-{generation}] Nota: {best_score} | Melhor Indivíduo: {best_individual}")
             evolve_count = max(stuck_count, evolve_count)
             stuck_count = 0
+            cataclisms = 0
             MUTATION_RATE = BASE_MUTATION_RATE
             
             global BEST_DUDE
             BEST_DUDE = best_individual
+            if best_score == 0:
+                raise AttributeError(f"Melhor indivíduo encontrado!{'\n'.join([f'{k}: {v}' for k, v in locals().items()])}")
             
         else:
             stuck_count += 1
 
+        new_population = []
+        # for _ in range(POPULATION_SIZE - EUGENY):
+        for _ in range(POPULATION_SIZE):
+            parent1 = tournament_selection(population, scores, 12)
+            parent2 = tournament_selection(population, scores, 12)
+            child = crossover(parent1, parent2)
+            child = special_mutate(child, MUTATION_RATE)
+            new_population.append(child)
+        
+        # new_population.extend(sorted(population, key=lambda x: evaluate_individual(x))[:EUGENY])
+        population = new_population
+
 if __name__ == "__main__":  
+    freeze_support()
     with Timer(visibility=True):
-        try:  
+        try:
             genetic_algorithm()
             
         except KeyboardInterrupt:
             print("\n\nExecução interrompida pelo usuário!\n\n")
             print_table(BEST_DUDE)
+            print(f"\n\nIndivíduo: {BEST_DUDE}\nNota: {fitting(BEST_DUDE)}")
+        
+        except AttributeError as e:
+            print(e)
+            print_table(BEST_DUDE)
+            exit(BEST_DUDE)
