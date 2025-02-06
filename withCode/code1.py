@@ -17,7 +17,7 @@ except ModuleNotFoundError:
     from trace_function import *
 
 # Parâmetros do algoritmo
-POPULATION_SIZE = 750  # Tamanho da população
+POPULATION_SIZE = 250  # Tamanho da população
 NUM_GENERATIONS = 10000000  # Número de gerações
 MATE_RATE = 0.7  # Taxa de cruzamento
 BASE_MUTATION_RATE = 0.01  # Taxa de mutação inicial
@@ -234,8 +234,8 @@ def genetic_algorithm(special_insert: None | list[str] =None):
         new_population = []
         # for _ in range(POPULATION_SIZE - EUGENY):
         for _ in range(len(population)):
-            parent1 = tournament_selection(population, scores, 12)
-            parent2 = tournament_selection(population, scores, 12)
+            parent1 = tournament_selection(population, scores, 100)
+            parent2 = tournament_selection(population, scores, 100)
             child = special_crossover(parent1, parent2, N=7)
             child = special_mutate(child, MUTATION_RATE)
             new_population.append(child)
@@ -247,22 +247,29 @@ if __name__ == "__main__":
     freeze_support()
     with Timer(visibility=True):
         try:
+            best_path = os.path.join(os.path.dirname(__file__), 'best_individuals.txt')
+            sp = []
+            
+            if os.path.exists(best_path):
+                with open(best_path, 'r') as f:
+                    for line in f:
+                        sp.append(line.strip())
+            
             genetic_algorithm(
-                special_insert=[
-                    # 'LMUIMCTIAHELIHMLMLIGCRGLFIMLALMLICLLATLILAGMCILGHIHFMMRLIUEMAIMMAILLILUCMLHMEFTLLIICHGLMGRHALHCMIGTAMFLILGRCLMILLILMUIME',
-                    # 'LMGITGMHILLRLIMMICMFLLEUICAHALILATUFGIGMMAILLLLMMIMHHCCLLIREGAMCRLILMUETMMIGFLIHHILMLAILLCUHIALALMLICLRGHIGELLIMMLFICTMM',
-                    # 'LTIMLLIHLGHLMGIMAAFMLICCMUEILRIAMHAMRLCIFMLLMITMLGIHLLIGULCEHLLITHMIUAAECFLGLLGICLMIRIMMMLFIGLGALTMLLCIRHLCHILMMIMALIUEM',
-                    # 'MGHMLTULILCIIHMLLLIGMLRFCMIAEAAMILRALGFMMLLIHGMHCTLIIULLCIMEIULHALITLIRMMLCICMMLGGFLIHEMALHLMIIHFIAALRGMLTGLLCIMLCUIMELM',
-                    # 'ITLGLGLAILLFLIMCRMMLIHHMCUIAEMGIMUMAIHLTRAIHLLCLCGFIMIMMLELLLLITCLGFMIARGMHIMHIMLMCLLIELUAMUHIHMMIGAMLCLIMLRLIGLLCILAFTE',
-                ]
+                # special_insert=sp
             )
             
         except KeyboardInterrupt:
             print("\n\nExecução interrompida pelo usuário!\n\n")
             print_table(BEST_DUDE)
             print(f"\n\nIndivíduo: {BEST_DUDE}\nNota: {fitting(BEST_DUDE)}")
+            track_execution(fitting, BEST_DUDE)
         
         except AttributeError as e:
             print(e)
             print_table(BEST_DUDE)
             exit(BEST_DUDE)
+            
+        
+        with open(best_path, 'a' if os.path.exists(best_path) else 'w') as f:
+            f.write(f"{BEST_DUDE}\n")

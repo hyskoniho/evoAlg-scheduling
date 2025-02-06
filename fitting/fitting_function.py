@@ -46,7 +46,7 @@ def separar_dias(turma: str) -> list[list[str]]:
         # Adiciona a aula no dia correspondente
         dias[i // 6][i % 6] = aula
     
-    return dias
+    return [''.join(dia) for dia in dias]
 
 
 def quantidade_aulas(horario: str, quantidade: int = 1, requisitos: dict = REQUISITOS) -> int:
@@ -82,25 +82,24 @@ def validar_restricoes(horario: str) -> int:
     for turma in separar_turmas(horario):
         nota_restricoes+= quantidade_aulas(turma)
         for d, dia in enumerate(separar_dias(turma)):
-            
             # Verifica se o horário da aula de inglês é após as 10:50
-            if 'I' in dia and dia.index('I') >= 4:
-                nota_restricoes += dia.index('I')
+            if 'I' in dia and dia.find('I', 4) >= 4:
+                nota_restricoes += dia.find('I', 4)
             
             # Verifica se tem aula de inglês
             if 'I' not in dia:
                 nota_restricoes += 1
             
             # Verifica se o horário de História é após as 10:50
-            if 'H' in dia and dia.index('H') >= 4:
-                nota_restricoes += dia.index('H')
+            if 'H' in dia and dia.find('H', 4) >= 4:
+                nota_restricoes += dia.find('H', 4)
                 
             # Verifica se o horário de Geografia é após as 10:50
-            if 'G' in dia and dia.index('G') >= 4:
-                nota_restricoes += dia.index('G')
+            if 'G' in dia and dia.find('G', 4) >= 4:
+                nota_restricoes += dia.find('G', 4)
                 
             # Verifica se o horário de Educação Física é antes das 9:10
-            if 'E' in dia and dia.index('E') < 2:
+            if 'E' in dia and dia.find('E', 0, 2) <= 1 and dia.find('E', 0, 2) != -1:
                 nota_restricoes += 1
                 
             # Verifica se o dia da educação física não é sexta-feira
@@ -109,11 +108,11 @@ def validar_restricoes(horario: str) -> int:
                 
             # Verifica se o dia de Artes é segunda-feira, terça-feira ou sexta-feira
             if 'A' in dia and d not in [0, 1, 4]:
-                nota_restricoes += 1
+                nota_restricoes += sum(1 for aula in dia if aula == 'A')
             
             # Verifica se o dia de Música é segunda-feira, terça-feira ou sexta-feira
             if 'U' in dia and d not in [0, 1, 4]:
-                nota_restricoes += 1
+                nota_restricoes += sum(1 for aula in dia if aula == 'U')
 
     return nota_restricoes
 
