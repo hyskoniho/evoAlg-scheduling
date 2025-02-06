@@ -17,7 +17,7 @@ except ModuleNotFoundError:
     from trace_function import *
 
 # Parâmetros do algoritmo
-POPULATION_SIZE = 250  # Tamanho da população
+POPULATION_SIZE = 750  # Tamanho da população
 NUM_GENERATIONS = 10000000  # Número de gerações
 MATE_RATE = 0.7  # Taxa de cruzamento
 BASE_MUTATION_RATE = 0.01  # Taxa de mutação inicial
@@ -100,10 +100,42 @@ def roulette_selection(population, scores):
 
 # Função de cruzamento (crossover)
 def crossover(parent1, parent2, mate_rate=MATE_RATE):
-    crossover_point = random.randint(1, len(parent1) - 1)
     if random.random() > mate_rate:
+        crossover_point = random.randint(1, len(parent1) - 1)
         return random.choice([parent1, parent2])
     child = parent1[:crossover_point] + parent2[crossover_point:]
+    return child
+
+# Função de cruzamento (crossover) com N pontos
+def special_crossover(parent1, parent2, N=3, mate_rate=MATE_RATE):
+    if random.random() > mate_rate:
+        return random.choice([parent1, parent2])
+    
+    # Garantir que N seja um número válido
+    N = min(N, len(parent1) - 1)
+
+    # Gerar N pontos de crossover aleatórios
+    crossover_points = sorted(random.sample(range(1, len(parent1)), N))
+    
+    # Inicializar a lista para o filho
+    child = []
+    
+    # Alternar entre os pais de acordo com os pontos de crossover
+    start = 0
+    for i in range(N):
+        end = crossover_points[i]
+        if i % 2 == 0:
+            child += parent1[start:end]
+        else:
+            child += parent2[start:end]
+        start = end
+
+    # Adicionar a última parte do genoma (depois do último ponto de crossover)
+    if N % 2 == 0:
+        child += parent1[start:]
+    else:
+        child += parent2[start:]
+
     return child
 
 # Função de mutação
@@ -139,8 +171,14 @@ def special_mutate(individual, mutation_rate=MUTATION_RATE):
     return ''.join(individual)
 
 # Loop de execução principal
-def genetic_algorithm():
+def genetic_algorithm(special_insert: None | list[str] =None):
     population = special_generate_population()
+    
+    if special_insert:
+        random_pos = random.choices(range(len(population)), k=len(special_insert))
+        for pos, individual in zip(random_pos, special_insert):
+            population[pos] = individual
+
     stuck_count = 0
     evolve_count = 1
     best_score = float('inf')
@@ -172,9 +210,6 @@ def genetic_algorithm():
                 MUTATION_RATE = round(MUTATION_RATE + MUTATION_ADJUSTMENT, 4)
                 print(f"[G-{generation}] Taxa de mutação ajustada para {MUTATION_RATE}!")
                 
-        # else:
-        #     MUTATION_RATE = max(0.01, MUTATION_RATE - MUTATION_ADJUSTMENT)
-
         scores = async_evaluate_population(population)
         
         # Exibir o melhor indivíduo da geração
@@ -183,7 +218,7 @@ def genetic_algorithm():
             best_individual = population[scores.index(best_score)]
             
             print(f"[G-{generation}] Nota: {best_score} | Melhor Indivíduo: {best_individual}")
-            evolve_count = max(stuck_count, evolve_count)
+            evolve_count = max(stuck_count, (evolve_count//2) if evolve_count > 1 else 1)
             stuck_count = 0
             cataclisms = 0
             MUTATION_RATE = BASE_MUTATION_RATE
@@ -198,10 +233,10 @@ def genetic_algorithm():
 
         new_population = []
         # for _ in range(POPULATION_SIZE - EUGENY):
-        for _ in range(POPULATION_SIZE):
+        for _ in range(len(population)):
             parent1 = tournament_selection(population, scores, 12)
             parent2 = tournament_selection(population, scores, 12)
-            child = crossover(parent1, parent2)
+            child = special_crossover(parent1, parent2, N=7)
             child = special_mutate(child, MUTATION_RATE)
             new_population.append(child)
         
@@ -212,7 +247,15 @@ if __name__ == "__main__":
     freeze_support()
     with Timer(visibility=True):
         try:
-            genetic_algorithm()
+            genetic_algorithm(
+                special_insert=[
+                    # 'LMUIMCTIAHELIHMLMLIGCRGLFIMLALMLICLLATLILAGMCILGHIHFMMRLIUEMAIMMAILLILUCMLHMEFTLLIICHGLMGRHALHCMIGTAMFLILGRCLMILLILMUIME',
+                    # 'LMGITGMHILLRLIMMICMFLLEUICAHALILATUFGIGMMAILLLLMMIMHHCCLLIREGAMCRLILMUETMMIGFLIHHILMLAILLCUHIALALMLICLRGHIGELLIMMLFICTMM',
+                    # 'LTIMLLIHLGHLMGIMAAFMLICCMUEILRIAMHAMRLCIFMLLMITMLGIHLLIGULCEHLLITHMIUAAECFLGLLGICLMIRIMMMLFIGLGALTMLLCIRHLCHILMMIMALIUEM',
+                    # 'MGHMLTULILCIIHMLLLIGMLRFCMIAEAAMILRALGFMMLLIHGMHCTLIIULLCIMEIULHALITLIRMMLCICMMLGGFLIHEMALHLMIIHFIAALRGMLTGLLCIMLCUIMELM',
+                    # 'ITLGLGLAILLFLIMCRMMLIHHMCUIAEMGIMUMAIHLTRAIHLLCLCGFIMIMMLELLLLITCLGFMIARGMHIMHIMLMCLLIELUAMUHIHMMIGAMLCLIMLRLIGLLCILAFTE',
+                ]
+            )
             
         except KeyboardInterrupt:
             print("\n\nExecução interrompida pelo usuário!\n\n")

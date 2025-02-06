@@ -1,5 +1,5 @@
 
-import sys, io
+import sys, io, os
 function_buffer = io.StringIO()
 
 def trace_calls(frame, event, arg, buffer=globals()['function_buffer']):
@@ -13,11 +13,12 @@ def trace_calls(frame, event, arg, buffer=globals()['function_buffer']):
     return trace_calls
 
 def track_execution(func, *args, **kwargs):
+    global function_buffer
     sys.settrace(trace_calls)
     func(*args, **kwargs)
-    global function_buffer
-    with open('trace_output.txt', 'w') as f:
+    with open(fr'{os.path.dirname(__file__)}\trace_output.txt', 'w') as f:
         f.write(function_buffer.getvalue())
-    function_buffer = io.StringIO()
     sys.settrace(None)
+    function_buffer.seek(0)
+    function_buffer.truncate(0)
 
