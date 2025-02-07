@@ -74,6 +74,36 @@ def quantidade_aulas(horario: str, quantidade: int = 1, requisitos: dict = REQUI
     return nota_quantidade
 
 
+def bonus_aula_dupla(hdia: str | list[str]) -> float:
+    """ Verifica se há aulas duplas
+    
+    Args:
+        hdia (str | list[str]): Horário de um dia
+    
+    Returns:
+        float: Bônus por aula dupla
+    """
+    bonus: float = 0.00
+    ultima: str = ''
+    i: int = 0
+    
+    for aula in hdia:
+        if aula == ultima:
+            if i <= 1:
+                bonus += 0.01
+            else:
+                bonus -= 1.01
+                
+            i+=1
+            
+        else:
+            i = 0
+            
+        ultima = aula
+        
+    return round(bonus, 2)
+
+
 def validar_restricoes(horario: str) -> int:
     """ Verifica se o horário atende as restrições"""
     # TODO:  Somar a distância entre o horário esperado x horário anotado pois incentiva mais a aproximação do horário esperado
@@ -82,6 +112,7 @@ def validar_restricoes(horario: str) -> int:
     for turma in separar_turmas(horario):
         nota_restricoes+= quantidade_aulas(turma)
         for d, dia in enumerate(separar_dias(turma)):
+            nota_restricoes -= bonus_aula_dupla(dia)
             # Verifica se o horário da aula de inglês é após as 10:50
             if 'I' in dia and dia.find('I', 4) >= 4:
                 nota_restricoes += dia.find('I', 4)
@@ -142,4 +173,4 @@ def validar_sobreposicoes(strings: list[str]) -> int:
 def fitting(horario: str, requisitos: dict = REQUISITOS) -> int:
     """ Função de fitness"""
     
-    return (quantidade_aulas(horario, 4, requisitos) + validar_restricoes(horario) + validar_sobreposicoes(separar_turmas(horario)))
+    return round((quantidade_aulas(horario, 4, requisitos) + validar_restricoes(horario) + validar_sobreposicoes(separar_turmas(horario))), 2)
