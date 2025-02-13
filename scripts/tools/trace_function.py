@@ -16,7 +16,7 @@ def track_execution(func, *args, **kwargs):
     global function_buffer
     sys.settrace(trace_calls)
     func(*args, **kwargs)
-    with open(fr'{os.path.dirname(__file__)}\trace_output.txt', 'w') as f:
+    with open(fr'.\data\trace_output.txt', 'w') as f:
         f.write(function_buffer.getvalue())
     sys.settrace(None)
     function_buffer.seek(0)

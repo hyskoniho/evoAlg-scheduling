@@ -112,7 +112,10 @@ def validar_restricoes(horario: str) -> int:
     for turma in separar_turmas(horario):
         nota_restricoes+= quantidade_aulas(turma)
         for d, dia in enumerate(separar_dias(turma)):
+            if any (dia.count(aula) > 3 for aula in dia):
+                nota_restricoes += 1
             nota_restricoes -= bonus_aula_dupla(dia)
+            
             # Verifica se o horário da aula de inglês é após as 10:50
             if 'I' in dia and dia.find('I', 4) >= 4:
                 nota_restricoes += dia.find('I', 4)
@@ -174,3 +177,8 @@ def fitting(horario: str, requisitos: dict = REQUISITOS) -> int:
     """ Função de fitness"""
     
     return round((quantidade_aulas(horario, 4, requisitos) + validar_restricoes(horario) + validar_sobreposicoes(separar_turmas(horario))), 2)
+
+
+if __name__ == '__main__':
+    import cProfile
+    cProfile.run('fitting(\"UHHIAATILLLMGFLICCMILLLRGIMEMMLLITCCLLIHAAIHMLRMLFIMMMILGGUEFIAAMMHHUIMLLLIMMRILGGCCLTEILLIMMLLLIMMMCCFIHHLLGGTIRLAAILEU\")')
