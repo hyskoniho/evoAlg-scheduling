@@ -1,16 +1,18 @@
-
-import sys, io, os
+import sys
+import io
 function_buffer = io.StringIO()
+
 
 def trace_calls(frame, event, arg, buffer=globals()['function_buffer']):
     if event == 'call':
-        buffer.write('\n'*3)
+        buffer.write('\n' * 3)
         buffer.write(f'Calling function: {frame.f_code.co_name}\n')
     elif event == 'line':
         buffer.write(f'[L{frame.f_lineno}] {frame.f_locals}\n')
     elif event == 'return':
         buffer.write(f'Returning from function: {frame.f_code.co_name}\n')
     return trace_calls
+
 
 def track_execution(func, *args, **kwargs):
     global function_buffer
@@ -21,4 +23,3 @@ def track_execution(func, *args, **kwargs):
     sys.settrace(None)
     function_buffer.seek(0)
     function_buffer.truncate(0)
-

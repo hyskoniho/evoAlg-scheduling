@@ -1,13 +1,7 @@
-from fitting_function import *
+from Fitting import *
 import random
-import os
-import sys
-from ptymer import Timer
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from multiprocessing import freeze_support
-
-sys.path.append(os.path.abspath(os.path.join('./scripts', 'fitting')))
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import cpu_count
 # Individual generator
 
 
@@ -69,7 +63,7 @@ def evaluate_population(
 def async_evaluate_population(
         population: list[str | list[str]]) -> dict[str, int | float]:
     results = {}
-    with ThreadPoolExecutor(max_workers=32) as executor:
+    with ProcessPoolExecutor(max_workers=min(4, cpu_count())) as executor:
         futures = {
             executor.submit(
                 evaluate_individual,
@@ -123,7 +117,8 @@ def special_crossover(parent1, parent2, mate_rate, N=3):
         child += parent1[start:]
     else:
         child += parent2[start:]
-    return child
+
+    return ''.join(child) if isinstance(child, list) else child
 
 # Função de mutação
 
@@ -143,8 +138,6 @@ def special_mutate(individual, mutation_rate):
             j = random.randint(0, len(individual) - 1)
             individual[i], individual[j] = individual[j], individual[i]
     return ''.join(individual)
-
-# Loop de execução principal
 
 
 def genetic_algorithm(pop_size: int,
@@ -183,7 +176,7 @@ def genetic_algorithm(pop_size: int,
                 print(
                     f"[G-{generation}] Taxa de mutação ajustada para {mutation_rate}!")
 
-        scores: dict = async_evaluate_population(population)
+        scores: dict = evaluate_population(population)
         scores: list[tuple] = sorted(scores.items(), key=lambda x: x[1])
 
         if scores[0][1] < best_score:
@@ -207,23 +200,12 @@ def genetic_algorithm(pop_size: int,
 
         new_population = []
         for _ in range(len(population)):
-            parent1 = tournament_selection(scores, 100)
-            parent2 = tournament_selection(scores, 100)
+            parent1 = tournament_selection(scores, 80)
+            parent2 = tournament_selection(scores, 80)
             child = special_crossover(
-                parent1, parent2, N=7, mate_rate=mating_rate)
+                parent1, parent2, N=3, mate_rate=mating_rate
+            )
             child = special_mutate(child, mutation_rate)
             new_population.append(child)
 
         population = new_population
-
-
-if __name__ == "__main__":
-    freeze_support()
-    genetic_algorithm(
-        pop_size=250,
-        num_generations=10000000,
-        base_mutation_rate=0.01,
-        mutation_adjustment=0.0025,
-        mutation_rate=0.01,
-        mating_rate=0.7
-    )

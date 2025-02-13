@@ -1,11 +1,5 @@
-from fitting_function import *
-import random
-import os
-import sys
-import math
-from ptymer import Timer
-
-sys.path.append(os.path.abspath(os.path.join('./scripts', 'fitting')))
+from Fitting import *
+import random, math
 
 # Get close neighbor
 
@@ -62,18 +56,3 @@ def simulated_annealing(initial_solution: str,
             break
 
     return best_solution, best_score
-
-
-if __name__ == "__main__":
-
-    # Parâmetros do algoritmo
-    initial_temp = 1000
-    cooling_rate = 0.95
-    max_iterations = 500000
-
-    initial_solution = 'TLIUAAFIGGCCMMMIRMHHILLLIMLLLELIGGMMIMMMFTLILHLRLLHICCLUEIAAIMMLLLHHIAALGLILCCFILGTRUIMEMMAALICCLLLILUIGGMMLIMMMRFHHITEL'
-    best_solution, best_score = simulated_annealing(
-        initial_solution, initial_temp, cooling_rate, max_iterations)
-
-    print("Melhor solução encontrada:", best_solution)
-    print("Nota da melhor solução:", best_score)
