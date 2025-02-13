@@ -22,7 +22,8 @@ def parallel_annealing(quantity: int,
                        initial_solution: str | list[str],
                        initial_temp: int,
                        cooling_rate: float,
-                       max_iterations: int) -> tuple[str | list[str], int | float]:
+                       max_iterations: int) -> tuple[str | list[str],
+                                                     int | float]:
     with ProcessPoolExecutor() as executor:
         futures: list = [
             executor.submit(
@@ -67,6 +68,7 @@ def main():
 
     with open(r'./data/best_solution.txt', 'w') as f:
         f.write(dude)
+
 
 if __name__ == '__main__':
     freeze_support()
