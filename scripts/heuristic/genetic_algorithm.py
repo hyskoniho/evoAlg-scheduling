@@ -2,10 +2,10 @@ from Fitting import *
 import random
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
-# Individual generator
 
 
 def generate_individual(requirements: dict, length: int = 120):
+# Individual generator
     return ''.join(random.choices([
         'M',  # Matemática
         'T',  # Tecnologia (Mind Makers)
@@ -21,17 +21,17 @@ def generate_individual(requirements: dict, length: int = 120):
         'E',  # Educação Física
     ], k=length))
 
-# Population generator
 
 
 def generate_population(size):
+# Population generator
     return [generate_individual() for _ in range(size)]
 
-# Function to generate a special population (with predefined minimum
-# requirements)
 
 
 def special_generate_population(
+# Function to generate a special population (with predefined minimum
+# requirements)
         size: int,
         turmas: int = 4,
         requirements: dict = REQUISITOS):
@@ -43,24 +43,24 @@ def special_generate_population(
         population.append(''.join(iv))
     return population
 
-# Apply the fitting function to the individual
 
 
 def evaluate_individual(individual: str) -> int | float:
+# Apply the fitting function to the individual
     return fitting(individual)
 
-# Apply the fitting function to all the individuals in the population
 
 
 def evaluate_population(
+# Apply the fitting function to all the individuals in the population
         population: list[str | list[str]]) -> dict[str, int | float]:
     return {individual: evaluate_individual(
         individual) for individual in population}
 
-# Async version of the evaluate_population function
 
 
 def async_evaluate_population(
+# Async version of the evaluate_population function
         population: list[str | list[str]]) -> dict[str, int | float]:
     results = {}
     with ProcessPoolExecutor(max_workers=min(4, cpu_count())) as executor:
@@ -73,31 +73,31 @@ def async_evaluate_population(
             results[individual] = future.result()
     return results
 
-# Select the parents for the next generation using the tournament
-# selection method
 
 
 def tournament_selection(scores: list[tuple], tournament_size=5):
+# Select the parents for the next generation using the tournament
+# selection method
     score_list = [score[1] for score in scores]
     individuals = [individual[0] for individual in scores]
     selected = random.sample(range(len(individuals)), tournament_size)
     best = min(selected, key=lambda idx: score_list[idx])
     return individuals[best]
 
-# Standard crossover function
 
 
 def crossover(parent1, parent2, mate_rate):
+# Standard crossover function
     if random.random() > mate_rate:
         crossover_point = random.randint(1, len(parent1) - 1)
         return random.choice([parent1, parent2])
     child = parent1[:crossover_point] + parent2[crossover_point:]
     return child
 
-# Crossover function with multiple crossover points
 
 
 def special_crossover(parent1, parent2, mate_rate, N=3):
+# Crossover function with multiple crossover points
     if random.random() > mate_rate:
         return random.choice([parent1, parent2])
     N = min(N, len(parent1) - 1)
@@ -120,10 +120,10 @@ def special_crossover(parent1, parent2, mate_rate, N=3):
 
     return ''.join(child) if isinstance(child, list) else child
 
-# Função de mutação
 
 
 def mutate(individual, mutation_rate):
+# Function to mutate an individual with random genes
     mutated = ''.join(
         char if random.random() > mutation_rate else random.choice(list(REQUISITOS.keys()))
         for char in individual
@@ -132,6 +132,7 @@ def mutate(individual, mutation_rate):
 
 
 def special_mutate(individual, mutation_rate):
+# Function to mutate an individual with a random gene swap
     individual = list(individual)
     for i in range(len(individual)):
         if random.random() < mutation_rate:
@@ -164,17 +165,15 @@ def genetic_algorithm(pop_size: int,
     best_individual: str = None
 
     for generation in range(num_generations):
-        # Ajuste dinâmico da taxa de mutação
         if stuck_count != 0 and stuck_count % evolve_count == 0:
             if mutation_rate >= base_mutation_rate * 5:
-                mutation_rate = base_mutation_rate
-                print(f"[G-{generation}] Encerrando algoritmo genético!")
+                print(f"[G-{generation}] Stopping Genetic Algorithm!")
                 return best_individual, best_score
 
             else:
                 mutation_rate = round(mutation_rate + mutation_adjustment, 4)
                 print(
-                    f"[G-{generation}] Taxa de mutação ajustada para {mutation_rate}!")
+                    f"[G-{generation}] Mutation rate adjusted to {mutation_rate}!")
 
         scores: dict = evaluate_population(population)
         scores: list[tuple] = sorted(scores.items(), key=lambda x: x[1])
@@ -184,15 +183,15 @@ def genetic_algorithm(pop_size: int,
             best_individual = scores[0][0]
 
             print(
-                f"[G-{generation}] Nota: {best_score} | Melhor Indivíduo: {best_individual}")
+                f"[G-{generation}] Fit: {best_score} | Individual: {best_individual}")
             evolve_count = max(stuck_count,
                                (evolve_count // 2) if evolve_count > 1 else 1)
             stuck_count = 0
             mutation_rate = base_mutation_rate
 
-            if best_score <= -0.2:
+            if best_score <= 0:
                 print(
-                    f"[G-{generation}] Melhor indivíduo encontrado no algoritmo genético!")
+                    f"[G-{generation}] Best individual found!")
                 return best_individual, best_score
 
         else:
