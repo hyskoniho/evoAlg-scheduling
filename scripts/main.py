@@ -11,12 +11,13 @@ MATE_RATE = 0.7
 BASE_MUTATION_RATE = 0.01
 MUTATION_RATE = BASE_MUTATION_RATE
 MUTATION_ADJUSTMENT = 0.0025
-
+    
 # Simulated Annealing
 INITIAL_TEMP = 1000
 COOLING_RATE = 0.95
 MAX_ITERATIONS = 300000
 
+OBJECTIVE = -0.35
 
 def parallel_annealing(quantity: int,
                        initial_solution: str | list[str],
@@ -52,7 +53,7 @@ def main() -> None:
         )
 
         cristal_i: int = 0
-        while fit >= -0.35:
+        while fit >= OBJECTIVE:
             print(f"[S-{cristal_i}] Starting Simulated Annealing!")
             dude, fit = parallel_annealing(
                 quantity=cpu_count(),
