@@ -97,28 +97,35 @@ def crossover(parent1, parent2, mate_rate):
 
 
 def special_crossover(parent1, parent2, mate_rate, N=3):
-# Crossover function with multiple crossover points
+    # Crossover function with multiple crossover points
     if random.random() > mate_rate:
-        return random.choice([parent1, parent2])
-    N = min(N, len(parent1) - 1)
+        return parent1, parent2  # Retorna os dois pais se a probabilidade não for atingida
 
+    N = min(N, len(parent1) - 1)
+    
     crossover_points = sorted(random.sample(range(1, len(parent1)), N))
-    child = []
+    child1 = []
+    child2 = []
     start = 0
+    
     for i in range(N):
         end = crossover_points[i]
         if i % 2 == 0:
-            child += parent1[start:end]
+            child1 += parent1[start:end]
+            child2 += parent2[start:end]
         else:
-            child += parent2[start:end]
+            child1 += parent2[start:end]
+            child2 += parent1[start:end]
         start = end
 
     if N % 2 == 0:
-        child += parent1[start:]
+        child1 += parent1[start:]
+        child2 += parent2[start:]
     else:
-        child += parent2[start:]
+        child1 += parent2[start:]
+        child2 += parent1[start:]
 
-    return ''.join(child) if isinstance(child, list) else child
+    return ''.join(child1) if isinstance(child1, list) else child1, ''.join(child2) if isinstance(child2, list) else child2
 
 
 
@@ -198,13 +205,13 @@ def genetic_algorithm(pop_size: int,
             stuck_count += 1
 
         new_population = []
-        for _ in range(len(population)):
+        while len(new_population) < pop_size:
             parent1 = tournament_selection(scores, 80)
             parent2 = tournament_selection(scores, 80)
-            child = special_crossover(
+            children = special_crossover(
                 parent1, parent2, N=3, mate_rate=mating_rate
             )
-            child = special_mutate(child, mutation_rate)
-            new_population.append(child)
+            children = [special_mutate(child, mutation_rate) for child in children]
+            new_population.extend(children)
 
         population = new_population
