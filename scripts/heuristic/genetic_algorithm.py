@@ -33,12 +33,12 @@ def special_generate_population(
 # Function to generate a special population (with predefined minimum
 # requirements)
         size: int,
-        turmas: int = 4,
-        requirements: dict = REQUISITOS):
+        n: int = CLASSROOMS,
+        r: dict = REQUIREMENTS) -> list[str]:
     population: list = []
     for _ in range(size):
-        iv = list(''.join(f'{key}' * (value * turmas)
-                  for key, value in requirements.items()))
+        iv = list(''.join(f'{key}' * (value * n)
+                  for key, value in r.items()))
         random.shuffle(iv)
         population.append(''.join(iv))
     return population
@@ -132,7 +132,7 @@ def special_crossover(parent1, parent2, mate_rate, N=3):
 def mutate(individual, mutation_rate):
 # Function to mutate an individual with random genes
     mutated = ''.join(
-        char if random.random() > mutation_rate else random.choice(list(REQUISITOS.keys()))
+        char if random.random() > mutation_rate else random.choice(list(REQUIREMENTS.keys()))
         for char in individual
     )
     return mutated

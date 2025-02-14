@@ -2,25 +2,31 @@ import random, inspect
 from collections import Counter
 
 
-REQUISITOS: dict = {'M': 5, 'T': 1, 'F': 1, 'L': 7, 'H': 2, 'G': 2, 'R': 1, 'A': 2, 'C': 2, 'I': 5, 'U': 1, 'E': 1}
+REQUIREMENTS = {'M': 5, 'T': 1, 'F': 1, 'L': 7, 'H': 2, 'G': 2, 'R': 1, 'A': 2, 'C': 2, 'I': 5, 'U': 1, 'E': 1}
 
 
-def separar_turmas(horario: str, quantidade_turmas: int = 4) -> list[str]:
+CLASSROOMS = 4
+
+
+SIM_PROFESSORS = [('M', 'T', 'F'), ('H', 'G'), ('A', 'U')]
+
+
+def separar_turmas(case: str, n: int = CLASSROOMS) -> list[str]:
     """ Separa o horário em turmas
     
     Args:
-        horario (str): Horário das aulas
-        quantidade_turmas (int, optional): Quantidade de turmas. Defaults to 4.
+        case (str): Horário das aulas
+        n (int, optional): Quantidade de turmas.
     
     Returns:
         list[str]: Lista de horários separados por turma
     """
-    tamanho_grupo = len(horario) // quantidade_turmas
+    tamanho_grupo = len(case) // n
     turmas = []
-    for i in range(quantidade_turmas):
+    for i in range(n):
         inicio = i * tamanho_grupo
         fim = inicio + tamanho_grupo
-        turmas.append(horario[inicio:fim])
+        turmas.append(case[inicio:fim])
         
     return turmas
 
@@ -42,26 +48,33 @@ def separar_dias(turma: str) -> list[list[str]]:
     return [''.join(dia) for dia in dias]
 
 
-def quantidade_aulas(horario: str, quantidade: int = 1, requisitos: dict = REQUISITOS) -> int:
+def sintetizar_professores(case: str, sp: list[tuple[str]] = SIM_PROFESSORS) -> str:
+    for p in sp:
+        for c in p:
+            case = case.replace(c, p[0])
+    return case
+
+
+def quantidade_aulas(case: str, n: int, r: dict = REQUIREMENTS) -> int:
     """ Verifica se o horário tem a quantidade de aulas necessárias 
     
     Args:
-        horario (str): Horário das aulas
-        requisitos (dict): Requisitos de aulas por matéria
+        case (str): Horário das aulas
+        r (dict): Requisitos de aulas por matéria
     
     Returns:
         int: Quantidade de aulas faltantes ou excedentes
     """
     
     # Conta a quantidade de aulas de cada matéria no horário especificado
-    c: Counter = Counter(horario)
+    c: Counter = Counter(case)
     # e.g. {'M': 28, 'L': 28, 'H': 16, 'C': 8, 'R': 4, 'I': 20, 'F': 4}
 
     nota_quantidade: int =  sum( # Somatório
         abs( # Valor absoluto para obter a diferença entre a quantidade de aulas esperada e a quantidade de aulas no horário
-            (requisitos[materia]*quantidade) - c.get(materia, 0) # Quantidade esperada daquela matéria - Quantidade de aulas daquela matéria no horário
+            (r[materia]*n) - c.get(materia, 0) # Quantidade esperada daquela matéria - Quantidade de aulas daquela matéria no horário
         ) \
-            for materia in requisitos # Aplica a operação para cada matéria, e soma o resultado
+            for materia in r # Aplica a operação para cada matéria, e soma o resultado
     )
     
     return nota_quantidade
@@ -97,13 +110,13 @@ def bonus_aula_dupla(hdia: str | list[str]) -> float:
     return round(bonus, 2)
 
 
-def validar_restricoes(horario: str) -> int:
+def validar_restricoes(cases: list[str]) -> int:
     """ Verifica se o horário atende as restrições"""
     # TODO:  Somar a distância entre o horário esperado x horário anotado pois incentiva mais a aproximação do horário esperado
     
     nota_restricoes: int = 0
-    for turma in separar_turmas(horario):
-        nota_restricoes+= quantidade_aulas(turma)
+    for turma in cases:
+        nota_restricoes+= quantidade_aulas(turma, n=1)
         for d, dia in enumerate(separar_dias(turma)):
             if any (dia.count(aula) > 3 for aula in dia):
                 nota_restricoes += 1
@@ -144,16 +157,12 @@ def validar_restricoes(horario: str) -> int:
     return nota_restricoes
 
 
-def validar_sobreposicoes(strings: list[str]) -> int:
-    strings = [string.replace('T', 'M').replace('F', 'M')\
-                .replace('G', 'H')\
-                .replace('A', 'U') for string in strings]
-    
+def validar_sobreposicoes(strings: list[str]) -> int:    
     chars = set(list(''.join(strings)))
     positions = {char: {num: {} for num in range(5)} for char in chars}
     nota_sobreposicoes: int = 0
     
-    for i, turma in enumerate(strings):
+    for turma in strings:
         for j, dia in enumerate(separar_dias(turma)):
             for k, aula in enumerate(dia):
                 if positions[aula][j] and k not in positions[aula][j]:
@@ -166,7 +175,7 @@ def validar_sobreposicoes(strings: list[str]) -> int:
     return nota_sobreposicoes
 
 
-def fitting(horario: str, requisitos: dict = REQUISITOS) -> int:
+def fitting(case: str) -> int:
     """ Função de fitness"""
-    
-    return round((quantidade_aulas(horario, 4, requisitos) + validar_restricoes(horario) + validar_sobreposicoes(separar_turmas(horario))), 2)
+    cases: list[str] = separar_turmas(case)
+    return round((validar_restricoes(cases) + validar_sobreposicoes([sintetizar_professores(t) for t in cases])), 2)
