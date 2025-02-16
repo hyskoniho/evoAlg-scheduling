@@ -5,19 +5,19 @@ from multiprocessing import freeze_support, cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Genetic Algorithm
-POPULATION_SIZE = 2000
+POPULATION_SIZE = 3000
 NUM_GENERATIONS = 10000000
 MATE_RATE = 0.7
 BASE_MUTATION_RATE = 0.01
 MUTATION_RATE = BASE_MUTATION_RATE
 MUTATION_ADJUSTMENT = 0.0025
-    
+
 # Simulated Annealing
 INITIAL_TEMP = 1000
 COOLING_RATE = 0.95
 MAX_ITERATIONS = 300000
 
-OBJECTIVE = -0.35
+OBJECTIVE = -0.40
 
 def parallel_annealing(quantity: int,
                        initial_solution: str | list[str],
@@ -39,20 +39,12 @@ def parallel_annealing(quantity: int,
 
 @Timer(visibility=True)
 def main() -> None:
+    global MAX_ITERATIONS
     try:
         fit: float | int = float('inf')
-        dude: str | list[str] = ''
-
-        dude, fit = genetic_algorithm(
-            pop_size=POPULATION_SIZE,
-            num_generations=NUM_GENERATIONS,
-            base_mutation_rate=BASE_MUTATION_RATE,
-            mutation_adjustment=MUTATION_ADJUSTMENT,
-            mutation_rate=MUTATION_RATE,
-            mating_rate=MATE_RATE
-        )
-
+        dude: str | list[str] = special_generate_individual()
         cristal_i: int = 0
+        qtd: int = MAX_ITERATIONS // 10000
         while fit >= OBJECTIVE:
             print(f"[S-{cristal_i}] Starting Simulated Annealing!")
             dude, fit = parallel_annealing(
@@ -60,11 +52,12 @@ def main() -> None:
                 initial_solution=dude,
                 initial_temp=INITIAL_TEMP,
                 cooling_rate=COOLING_RATE,
-                max_iterations=MAX_ITERATIONS
+                max_iterations=qtd if qtd < MAX_ITERATIONS else MAX_ITERATIONS
             )
             print(f"[S-{cristal_i}] Fit: {fit} | Individual: {dude}")
             cristal_i += 1
-
+            qtd*=cristal_i
+            
     except KeyboardInterrupt:
         if dude:
             pass

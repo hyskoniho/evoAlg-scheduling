@@ -21,7 +21,13 @@ def generate_individual(requirements: dict, length: int = 120):
         'E',  # Educação Física
     ], k=length))
 
-
+def special_generate_individual(n: int = CLASSROOMS, r: dict = REQUIREMENTS) -> str:
+# Function to generate a special individual (with predefined minimum
+# requirements)
+    iv = list(''.join(f'{key}' * (value * n)
+                for key, value in r.items()))
+    random.shuffle(iv)
+    return ''.join(iv)
 
 def generate_population(size):
 # Population generator
