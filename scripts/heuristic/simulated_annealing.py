@@ -16,7 +16,8 @@ def get_neighbor(solution):
 def simulated_annealing(initial_solution: str,
                         initial_temp: int,
                         cooling_rate: float,
-                        max_iterations: int) -> tuple[str | list[str],
+                        max_iterations: int,
+                        objective: int | float) -> tuple[str | list[str],
                                                       int | float]:
     current_solution = initial_solution
     current_score = fitting(current_solution)
@@ -52,7 +53,7 @@ def simulated_annealing(initial_solution: str,
         temperature *= cooling_rate
 
         # Se a nota for 0, encontramos a solução perfeita
-        if best_score == -0.56:
+        if best_score <= objective:
             break
 
     return best_solution, best_score

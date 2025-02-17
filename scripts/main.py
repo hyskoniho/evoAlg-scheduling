@@ -17,13 +17,14 @@ INITIAL_TEMP = 1000
 COOLING_RATE = 0.95
 MAX_ITERATIONS = 300000
 
-OBJECTIVE = -0.40
+OBJECTIVE = 0
 
 def parallel_annealing(quantity: int,
                        initial_solution: str | list[str],
                        initial_temp: int,
                        cooling_rate: float,
-                       max_iterations: int) -> tuple[str | list[str],
+                       max_iterations: int,
+                       objective: float) -> tuple[str | list[str],
                                                      int | float]:
     with ProcessPoolExecutor() as executor:
         futures: list = [
@@ -32,7 +33,8 @@ def parallel_annealing(quantity: int,
                 initial_solution,
                 initial_temp,
                 cooling_rate,
-                max_iterations) for _ in range(quantity)]
+                max_iterations,
+                objective) for _ in range(quantity)]
         results: list = [future.result() for future in as_completed(futures)]
     return sorted(results, key=lambda x: x[1])[0]
 
@@ -52,7 +54,8 @@ def main() -> None:
                 initial_solution=dude,
                 initial_temp=INITIAL_TEMP,
                 cooling_rate=COOLING_RATE,
-                max_iterations=qtd if qtd < MAX_ITERATIONS else MAX_ITERATIONS
+                max_iterations=qtd if qtd < MAX_ITERATIONS else MAX_ITERATIONS,
+                objective=OBJECTIVE
             )
             print(f"[S-{cristal_i}] Fit: {fit} | Individual: {dude}")
             cristal_i += 1
