@@ -4,14 +4,6 @@ from ptymer import Timer
 from multiprocessing import freeze_support, cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-# Genetic Algorithm
-POPULATION_SIZE = 3000
-NUM_GENERATIONS = 10000000
-MATE_RATE = 0.7
-BASE_MUTATION_RATE = 0.01
-MUTATION_RATE = BASE_MUTATION_RATE
-MUTATION_ADJUSTMENT = 0.0025
-
 # Simulated Annealing
 INITIAL_TEMP = 1000
 COOLING_RATE = 0.95

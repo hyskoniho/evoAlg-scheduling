@@ -21,8 +21,8 @@ def separar_turmas(case: str, n: int = CLASSROOMS) -> list[str]:
     Returns:
         list[str]: Lista de horários separados por turma
     """
-    tamanho_grupo = len(case) // n
-    turmas = []
+    tamanho_grupo: int = len(case) // n
+    turmas: list[str] = []
     for i in range(n):
         inicio = i * tamanho_grupo
         fim = inicio + tamanho_grupo
@@ -51,7 +51,7 @@ def separar_dias(turma: str) -> list[list[str]]:
 def sintetizar_professores(case: str, sp: list[tuple[str]] = SIM_PROFESSORS) -> str:
     for p in sp:
         for c in p:
-            case = case.replace(c, p[0])
+            case: str = case.replace(c, p[0])
     return case
 
 
@@ -80,7 +80,7 @@ def quantidade_aulas(case: str, n: int, r: dict = REQUIREMENTS) -> int:
     return nota_quantidade
 
 
-def bonus_aula_dupla(hdia: str | list[str]) -> float:
+def bonus_aula_dupla(hdia: str) -> float:
     """ Verifica se há aulas duplas
     
     Args:
@@ -105,16 +105,16 @@ def bonus_aula_dupla(hdia: str | list[str]) -> float:
         else:
             i = 0
             
-        ultima = aula
+        ultima: str = aula
         
     return round(bonus, 2)
 
 
-def validar_restricoes(cases: list[str]) -> int:
+def validar_restricoes(cases: list[str]) -> float:
     """ Verifica se o horário atende as restrições"""
     # TODO:  Somar a distância entre o horário esperado x horário anotado pois incentiva mais a aproximação do horário esperado
     
-    nota_restricoes: int = 0
+    nota_restricoes: float = 0.00
     for turma in cases:
         nota_restricoes+= quantidade_aulas(turma, n=1)
         for d, dia in enumerate(separar_dias(turma)):
@@ -158,8 +158,8 @@ def validar_restricoes(cases: list[str]) -> int:
 
 
 def validar_sobreposicoes(strings: list[str]) -> int:    
-    chars = set(list(''.join(strings)))
-    positions = {char: {num: {} for num in range(5)} for char in chars}
+    chars: set = set(list(''.join(strings)))
+    positions: dict = {char: {num: {} for num in range(5)} for char in chars}
     nota_sobreposicoes: int = 0
     
     for turma in strings:
@@ -175,7 +175,7 @@ def validar_sobreposicoes(strings: list[str]) -> int:
     return nota_sobreposicoes
 
 
-def fitting(case: str) -> int:
+def fitting(case: str) -> float:
     """ Função de fitness"""
     cases: list[str] = separar_turmas(case)
     return round((validar_restricoes(cases) + validar_sobreposicoes([sintetizar_professores(t) for t in cases])), 2)
