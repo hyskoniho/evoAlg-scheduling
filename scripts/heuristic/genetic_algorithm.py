@@ -4,32 +4,19 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
 
 
-def generate_individual(requirements: dict, length: int = 120):
+def generate_individual(length: int = 120, r: dict = REQUIREMENTS) -> str:
 # Individual generator
-    return ''.join(random.choices([
-        'M',  # Matemática
-        'T',  # Tecnologia (Mind Makers)
-        'F',  # Ed. Financeira
-        'L',  # Língua Portuguesa
-        'H',  # História
-        'G',  # Geografia
-        'R',  # Ensino Religioso
-        'A',  # Artes
-        'C',  # Ciências
-        'I',  # Inglês
-        'U',  # Música
-        'E',  # Educação Física
-    ], k=length))
+    return ''.join(random.choices(list(r.keys()), k=length))
 
 def special_generate_individual(n: int = CLASSROOMS, r: dict = REQUIREMENTS) -> str:
 # Function to generate a special individual (with predefined minimum
 # requirements)
-    iv = list(''.join(f'{key}' * (value * n)
+    iv: list = list(''.join(f'{key}' * (value * n)
                 for key, value in r.items()))
     random.shuffle(iv)
     return ''.join(iv)
 
-def generate_population(size):
+def generate_population(size: int) -> list[str]:
 # Population generator
     return [generate_individual() for _ in range(size)]
 
@@ -43,7 +30,7 @@ def special_generate_population(
         r: dict = REQUIREMENTS) -> list[str]:
     population: list = []
     for _ in range(size):
-        iv = list(''.join(f'{key}' * (value * n)
+        iv: list = list(''.join(f'{key}' * (value * n)
                   for key, value in r.items()))
         random.shuffle(iv)
         population.append(''.join(iv))
@@ -51,7 +38,7 @@ def special_generate_population(
 
 
 
-def evaluate_individual(individual: str) -> int | float:
+def evaluate_individual(individual: str) -> float:
 # Apply the fitting function to the individual
     return fitting(individual)
 
@@ -59,7 +46,7 @@ def evaluate_individual(individual: str) -> int | float:
 
 def evaluate_population(
 # Apply the fitting function to all the individuals in the population
-        population: list[str | list[str]]) -> dict[str, int | float]:
+        population: list[str]) -> dict[str, float]:
     return {individual: evaluate_individual(
         individual) for individual in population}
 
@@ -67,7 +54,7 @@ def evaluate_population(
 
 def async_evaluate_population(
 # Async version of the evaluate_population function
-        population: list[str | list[str]]) -> dict[str, int | float]:
+        population: list[str]) -> dict[str, float]:
     results = {}
     with ProcessPoolExecutor(max_workers=min(4, cpu_count())) as executor:
         futures = {
@@ -81,7 +68,7 @@ def async_evaluate_population(
 
 
 
-def tournament_selection(scores: list[tuple], tournament_size=5):
+def tournament_selection(scores: list[tuple], tournament_size: int=5) -> str:
 # Select the parents for the next generation using the tournament
 # selection method
     score_list = [score[1] for score in scores]
@@ -92,37 +79,37 @@ def tournament_selection(scores: list[tuple], tournament_size=5):
 
 
 
-def crossover(parent1, parent2, mate_rate):
-# Standard crossover function
-    if random.random() > mate_rate:
-        crossover_point = random.randint(1, len(parent1) - 1)
-        return random.choice([parent1, parent2])
-    child = parent1[:crossover_point] + parent2[crossover_point:]
-    return child
+# def crossover(parent1: str, parent2: str, mate_rate: float) -> str:
+# # Standard crossover function
+#     if random.random() > mate_rate:
+#         crossover_point: int = random.randint(1, len(parent1) - 1)
+#         return random.choice([parent1, parent2])
+#     child: str = parent1[:crossover_point] + parent2[crossover_point:]
+#     return child
 
 
 
-def special_crossover(parent1, parent2, mate_rate, N=3):
+def special_crossover(parent1: str, parent2: str, mate_rate: float, N: int = 3) -> tuple[str]:
     # Crossover function with multiple crossover points
     if random.random() > mate_rate:
         return parent1, parent2  # Retorna os dois pais se a probabilidade não for atingida
 
-    N = min(N, len(parent1) - 1)
+    N: int = min(N, len(parent1) - 1)
     
     crossover_points = sorted(random.sample(range(1, len(parent1)), N))
-    child1 = []
-    child2 = []
-    start = 0
+    child1: list = []
+    child2: list = []
+    start: int = 0
     
     for i in range(N):
-        end = crossover_points[i]
+        end: int = crossover_points[i]
         if i % 2 == 0:
             child1 += parent1[start:end]
             child2 += parent2[start:end]
         else:
             child1 += parent2[start:end]
             child2 += parent1[start:end]
-        start = end
+        start: int = end
 
     if N % 2 == 0:
         child1 += parent1[start:]
@@ -135,18 +122,18 @@ def special_crossover(parent1, parent2, mate_rate, N=3):
 
 
 
-def mutate(individual, mutation_rate):
+def mutate(individual: str, mutation_rate: float) -> str:
 # Function to mutate an individual with random genes
-    mutated = ''.join(
+    mutated: str = ''.join(
         char if random.random() > mutation_rate else random.choice(list(REQUIREMENTS.keys()))
         for char in individual
     )
     return mutated
 
 
-def special_mutate(individual, mutation_rate):
+def special_mutate(individual: str, mutation_rate: float) -> str:
 # Function to mutate an individual with a random gene swap
-    individual = list(individual)
+    individual: list[str] = list(individual)
     for i in range(len(individual)):
         if random.random() < mutation_rate:
             j = random.randint(0, len(individual) - 1)

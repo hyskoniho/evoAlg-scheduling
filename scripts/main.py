@@ -9,7 +9,7 @@ INITIAL_TEMP = 1000
 COOLING_RATE = 0.95
 MAX_ITERATIONS = 300000
 
-OBJECTIVE = 0
+OBJECTIVE = -0.40
 
 def parallel_annealing(quantity: int,
                        initial_solution: str | list[str],
